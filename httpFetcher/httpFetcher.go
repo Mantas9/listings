@@ -1,0 +1,96 @@
+package httpfetcher
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
+
+// GetListings call parameters
+type GetListingsOpts struct {
+	Symbol   string  // Collection symbol
+	Limit    int64   // Limit of total collection listings to be fetched
+	MinPrice float64 // Minimum price of listings
+	MaxPrice float64 // Maximum price of listings
+	Desc     bool    // Sort results by price descending
+}
+
+func GetListings(opts GetListingsOpts) (string, error) { // Base GetListings function call
+
+	// Base URL to API call with symbol
+	url := fmt.Sprintf("https://api-mainnet.magiceden.dev/v2/collections/%s/listings", opts.Symbol)
+
+	// Handle extra parameters
+	paramCnt := 0        // Amount of parameters added
+	if opts.Limit != 0 { // Listing count limit
+		url += fmt.Sprintf("?limit=%d", opts.Limit) // Add limit option
+		paramCnt++
+	}
+	if opts.MinPrice != 0 { // Min price of listing
+		// Check if there are already options listed
+		if paramCnt != 0 {
+			url += "&" // Add & for next param
+		} else {
+			url += "?" // Add ? because this is the first param
+		}
+
+		// Add MinPrice argument
+		url += fmt.Sprintf("min_price=%f", opts.MinPrice)
+
+		// Param counter
+		paramCnt++
+	}
+	if opts.MaxPrice != 0 { // Max price of listing
+		// Check if there are already options listed
+		if paramCnt != 0 {
+			url += "&" // Add & for next param
+		} else {
+			url += "?" // Add ? because this is the first param
+		}
+
+		// Add MaxPrice argument
+		url += fmt.Sprintf("max_price=%f", opts.MaxPrice)
+
+		// Param counter
+		paramCnt++
+	}
+	if opts.Desc { // Sort descending
+		// Check if there are already options listed
+		if paramCnt != 0 {
+			url += "&" // Add & for next param
+		} else {
+			url += "?" // Add ? because this is the first param
+		}
+
+		// Add Descending order argument
+		url += "sort_direction=desc"
+
+		// Param counter
+		paramCnt++
+	}
+
+	// Now that URL is complete, make HTTP request
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil { // Error check
+		return "", err
+	}
+
+	// Add JSON header to request
+	req.Header.Add("accept", "application/json")
+
+	// Execute HTTP request
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil { // Error check
+		return "", err
+	}
+
+	// Close body reader when done
+	defer res.Body.Close()
+	// Read fetched data
+	body, err := io.ReadAll(res.Body)
+
+	// Return result
+	return string(body), err
+}
