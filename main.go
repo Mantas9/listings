@@ -96,6 +96,8 @@ func main() {
 			exportJSON = true // Flag export JSON to true
 
 			argsToDrop++ // +1 parameter to drop
+		} else if (len(arg) >= 2 && arg[:2] == "--") || arg[0] == '-' { // If invalid parameter, print help message
+			constants.HelpMessage()
 		} else { // If not a parameter and no valueflag, break loop
 			break
 		}
