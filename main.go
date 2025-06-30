@@ -1,9 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"mantas9/listings/constants"
+	"mantas9/listings/formatter"
 	httpfetcher "mantas9/listings/httpFetcher"
+	"mantas9/listings/models"
+	"mantas9/listings/writer"
 	"os"
 	"strconv"
+	"sync"
 )
 
 func main() {
@@ -12,11 +18,23 @@ func main() {
 
 	// Handle parameters
 	params := httpfetcher.GetListingsOpts{}
-	argsToDrop := 0    // Counter for how many arguments to drop from args list after parsing parameters
-	valueFlag := false // Flag to parse next value as a parameter argument
+	argsToDrop := 0     // Counter for how many arguments to drop from args list after parsing parameters
+	valueFlag := false  // Flag to parse next value as a parameter argument
+	exportJSON := false // Flag to export to JSON instead of CSV
+
+	// If no arguments were passed, print Help message and exit
+	if len(args) <= 0 {
+		constants.HelpMessage()
+	}
 
 	// iterate through each argument and parse its value
 	for i, arg := range args {
+
+		// If help was specified, print Help message
+		if arg == "--help" || arg == "-h" {
+			constants.HelpMessage()
+		}
+
 		if valueFlag { // Skip if value flag and reset
 			valueFlag = false
 			continue
@@ -74,6 +92,10 @@ func main() {
 			params.Desc = true // Set descending order
 
 			argsToDrop++ // Add one parameter to drop
+		} else if arg == "--json" {
+			exportJSON = true // Flag export JSON to true
+
+			argsToDrop++ // +1 parameter to drop
 		} else { // If not a parameter and no valueflag, break loop
 			break
 		}
@@ -81,4 +103,80 @@ func main() {
 
 	// Drop parameter arguments
 	args = args[argsToDrop:]
+
+	var wg sync.WaitGroup             // Waitgroup to prevent code from exiting prematurely
+	ch := make(chan []models.Listing) // Channel for concurrent data fetching
+
+	// Start parsing NFT data
+	for _, arg := range args {
+		wg.Add(1)
+
+		go func(symbol string) {
+			defer wg.Done()
+
+			params.Symbol = symbol // Set collection symbol in params
+
+			// Call getListings
+			listings, err := getListings(params)
+
+			// Error check
+			if err != nil {
+				fmt.Printf("Error in fetching stats:\n%s", err)
+				os.Exit(1)
+			}
+
+			if len(listings) <= 0 { // Warn user about no matches for his collection
+				fmt.Printf(`There are no matching Listings for the collection "%v" on the MagicEden Marketplace according to your parameters.`+"\nThis collection will be skipped.\n\n", symbol) // Warn user
+			}
+
+			// Push to channel
+			ch <- listings
+
+		}(arg)
+
+	}
+
+	// Wait for all tasks to finish
+	go func() {
+		wg.Wait()
+		close(ch) // Close channel
+	}()
+
+	var allListings []models.Listing // Combined list of all fetched listings
+
+	// Iterate through channel
+	for listing := range ch {
+		allListings = append(allListings, listing...) // Append all listings data to main list
+	}
+
+	// Export everything in specified format
+	if exportJSON { // JSON
+		if err := writer.WriteJSON(allListings); err != nil {
+			panic(err)
+		}
+	} else if err := writer.WriteCSV(allListings); err != nil { // Else, CSV
+		panic(err)
+	}
+
+}
+
+func getListings(options httpfetcher.GetListingsOpts) ([]models.Listing, error) {
+	ch := make(chan []byte, 1) // Channel for communicating with http
+
+	// Call httpFetcher to get collection listings
+	if err := httpfetcher.GetListings(options, ch); err != nil {
+		return nil, err // Error check
+	}
+
+	json := <-ch // Fetch channel data
+
+	// Unmarshal JSON
+	res, err := formatter.UnmarshalJSON(json)
+
+	// Error check
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

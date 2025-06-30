@@ -15,7 +15,7 @@ type GetListingsOpts struct {
 	Desc     bool    // Sort results by price descending
 }
 
-func GetListings(opts GetListingsOpts) (string, error) { // Base GetListings function call
+func GetListings(opts GetListingsOpts, ch chan []byte) error { // Base GetListings function call
 
 	// Base URL to API call with symbol
 	url := fmt.Sprintf("https://api-mainnet.magiceden.dev/v2/collections/%s/listings", opts.Symbol)
@@ -73,7 +73,7 @@ func GetListings(opts GetListingsOpts) (string, error) { // Base GetListings fun
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil { // Error check
-		return "", err
+		return err
 	}
 
 	// Add JSON header to request
@@ -83,7 +83,7 @@ func GetListings(opts GetListingsOpts) (string, error) { // Base GetListings fun
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil { // Error check
-		return "", err
+		return err
 	}
 
 	// Close body reader when done
@@ -91,6 +91,8 @@ func GetListings(opts GetListingsOpts) (string, error) { // Base GetListings fun
 	// Read fetched data
 	body, err := io.ReadAll(res.Body)
 
+	ch <- body // Push to channel
+
 	// Return result
-	return string(body), err
+	return err
 }

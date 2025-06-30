@@ -16,8 +16,8 @@ type ListingJSON struct {
 
 // ========= Flat Struct for CSV data ==========
 type Listing struct {
-	Collection string  `csv:"collection"`
-	Seller     string  `csv:"seller"`
-	Price      float64 `csv:"price"`
-	Mint       string  `csv:"mintAddress"`
+	Collection string  `csv:"collection" json:"collection"`
+	Seller     string  `csv:"seller" json:"seller"`
+	Price      float64 `csv:"price" json:"price"`
+	Mint       string  `csv:"mintAddress" json:"mintAddress"`
 }
