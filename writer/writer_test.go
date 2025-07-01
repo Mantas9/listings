@@ -92,6 +92,8 @@ func TestWriteJSON(t *testing.T) {
 
 // TestWriteCSV calls WriteCSV inputting valid, empty and partial/invalid struct data
 func TestWriteCSV(t *testing.T) {
+
+	// Test table
 	var tests = []struct {
 		name      string
 		filename  string
@@ -100,23 +102,70 @@ func TestWriteCSV(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name:      "Valid input",
-			filename:  "valid.csv",
-			input:     []models.Listing{},
+			name:     "Valid input",
+			filename: "valid.csv",
+			input: []models.Listing{
+				{
+					Collection: "degods",
+					Seller:     "skyi3dryB3a3M5Sh5CTDYput2ET7BjTvXY8SMxZkheA",
+					Price:      5.2361,
+					Mint:       "BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV",
+				},
+				{
+					Collection: "degods",
+					Seller:     "8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh",
+					Price:      5.2362,
+					Mint:       "3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP",
+				},
+			},
 			want:      "collection,seller,price,mintAddress\ndegods,skyi3dryB3a3M5Sh5CTDYput2ET7BjTvXY8SMxZkheA,5.2361,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\ndegods,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP",
 			expectErr: false,
 		},
 		{
 			name:      "Empty input",
 			filename:  "empty.csv",
+			input:     []models.Listing{},
 			want:      "collection,seller,price,mintAddress",
 			expectErr: false,
 		},
 		{
-			name:      "Valid input",
-			filename:  "valid.csv",
-			want:      "collection,seller,price,mintAddress\ndegods,skyi3dryB3a3M5Sh5CTDYput2ET7BjTvXY8SMxZkheA,5.2361,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\ndegods,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP",
+			name:     "Invalid input",
+			filename: "invalid.csv",
+			input: []models.Listing{
+				{
+					Collection: "degods",
+					Mint:       "BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV",
+				},
+				{
+					Seller: "8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh",
+					Price:  5.2362,
+				},
+			},
+			want:      "collection,seller,price,mintAddress\ndegods,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\n,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,",
 			expectErr: false,
 		},
+	}
+
+	// Iterate through tests table
+	for _, tt := range tests {
+		testName := tt.name // Get test name
+
+		// Run test
+		t.Run(testName, func(t *testing.T) {
+			err := WriteCSV(tt.input, tt.filename) // Run WriteCSV
+
+			// Error check
+			if tt.expectErr && err == nil {
+				t.Errorf("Expected error, but no error was returned")
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		})
+
+		// Cleanup test files afterwards
+		t.Cleanup(func() {
+			os.Remove(tt.filename)
+		})
 	}
 }
