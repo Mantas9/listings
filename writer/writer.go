@@ -10,7 +10,7 @@ import (
 )
 
 // Marshals Listing data to JSON and writes output to file
-func WriteJSON(data []models.Listing) error {
+func WriteJSON(data []models.Listing, filename string) error {
 	json, err := json.Marshal(data) // Marshal JSON
 
 	if err != nil { // Error check
@@ -18,20 +18,20 @@ func WriteJSON(data []models.Listing) error {
 	}
 
 	// Write to file
-	if err := os.WriteFile("listings.json", json, 0644); err != nil {
+	if err := os.WriteFile(filename, json, 0644); err != nil {
 		return err
 	}
 
 	// Print success message
-	fmt.Println("Your selected NFT Listings' data has been written to listings.json successfully.")
+	fmt.Printf("Your selected NFT Listings' data has been written to %s successfully.\n", filename)
 
 	return nil
 }
 
 // Write struct data to CSV file
-func WriteCSV(data []models.Listing) error {
+func WriteCSV(data []models.Listing, filename string) error {
 	// Create CSV file if exists
-	file, err := os.Create("listings.csv")
+	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func WriteCSV(data []models.Listing) error {
 		return err
 	}
 
-	fmt.Println("Your selected NFT Listings' data has been written to listings.csv successfully.")
+	fmt.Printf("Your selected NFT Listings' data has been written to %s successfully.\n", filename)
 
 	return nil
 }

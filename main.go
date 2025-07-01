@@ -153,10 +153,10 @@ func main() {
 
 	// Export everything in specified format
 	if exportJSON { // JSON
-		if err := writer.WriteJSON(allListings); err != nil {
+		if err := writer.WriteJSON(allListings, "listings.json"); err != nil {
 			panic(err)
 		}
-	} else if err := writer.WriteCSV(allListings); err != nil { // Else, CSV
+	} else if err := writer.WriteCSV(allListings, "listings.csv"); err != nil { // Else, CSV
 		panic(err)
 	}
 

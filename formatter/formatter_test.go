@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestUnmarshalJSON calls formatter.UnmarshalJSON with a Valid, Empty and invalid JSON input, checking for a valid return value
+// TestUnmarshalJSON calls formatter.UnmarshalJSON with a Valid, Empty and invalid JSON input, checking for valid return values
 func TestUnmarshalJSON(t *testing.T) {
 	// Create test table
 	var tests = []struct {
