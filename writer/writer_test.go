@@ -118,14 +118,14 @@ func TestWriteCSV(t *testing.T) {
 					Mint:       "3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP",
 				},
 			},
-			want:      "collection,seller,price,mintAddress\ndegods,skyi3dryB3a3M5Sh5CTDYput2ET7BjTvXY8SMxZkheA,5.2361,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\ndegods,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP",
+			want:      "collection,seller,price,mintAddress\ndegods,skyi3dryB3a3M5Sh5CTDYput2ET7BjTvXY8SMxZkheA,5.2361,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\ndegods,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,3TkKMw9BAfd8FQTw352UrbVWKzzBJQFpeMzPGaj2MnVP\n",
 			expectErr: false,
 		},
 		{
 			name:      "Empty input",
 			filename:  "empty.csv",
 			input:     []models.Listing{},
-			want:      "collection,seller,price,mintAddress",
+			want:      "collection,seller,price,mintAddress\n",
 			expectErr: false,
 		},
 		{
@@ -141,7 +141,7 @@ func TestWriteCSV(t *testing.T) {
 					Price:  5.2362,
 				},
 			},
-			want:      "collection,seller,price,mintAddress\ndegods,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\n,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,",
+			want:      "collection,seller,price,mintAddress\ndegods,,0,BJh3bS9gxfae6TNuwdorJ7pztVUeXhw2DnP4KVwgfeNV\n,8Gwdguqu9B96eSGFWJbz49PRuKRT5nZNLBDttm4mDQrh,5.2362,\n",
 			expectErr: false,
 		},
 	}
@@ -160,6 +160,23 @@ func TestWriteCSV(t *testing.T) {
 			}
 			if !tt.expectErr && err != nil {
 				t.Errorf("Unexpected error: %v", err)
+			}
+
+			if err == nil { // If no error returned, check written file contents
+				info, err := os.Stat(tt.filename)
+
+				if err != nil { // File not found
+					t.Errorf("Error accessing file %s: %v", tt.filename, err)
+				} else { // If exists, compare contents
+					file, err := os.ReadFile(info.Name()) // Read contents
+
+					// Error check
+					if err != nil {
+						t.Errorf("Error reading file %s: %v", info.Name(), err)
+					} else if string(file) != tt.want {
+						t.Errorf("Got %v, wanted %s", string(file), tt.want)
+					}
+				}
 			}
 		})
 
