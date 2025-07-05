@@ -163,21 +163,20 @@ func main() {
 }
 
 func getListings(options httpfetcher.GetListingsOpts) ([]models.Listing, error) {
-	ch := make(chan []byte, 1) // Channel for communicating with http
-
-	// Call httpFetcher to get collection listings
-	if err := httpfetcher.GetListings(options, ch); err != nil {
-		return nil, err // Error check
-	}
-
-	json := <-ch // Fetch channel data
-
-	// Unmarshal JSON
-	res, err := formatter.UnmarshalJSON(json)
+	// Fetch HTTP data
+	data, err := httpfetcher.GetListings(options)
 
 	// Error check
 	if err != nil {
-		return nil, err
+		return []models.Listing{}, err
+	}
+
+	// Unmarshal JSON data
+	res, err := formatter.UnmarshalJSON(data)
+
+	// Error check
+	if err != nil {
+		return []models.Listing{}, err
 	}
 
 	return res, nil

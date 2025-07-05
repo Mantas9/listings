@@ -15,9 +15,28 @@ type GetListingsOpts struct {
 	Desc     bool    // Sort results by price descending
 }
 
-func GetListings(opts GetListingsOpts, ch chan []byte) error { // Base GetListings function call
+func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings function call
 
-	// Base URL to API call with symbol
+	// URL To API
+	url := formURL(opts)
+
+	// Execute HTTP request
+	res, err := httpRequest(url)
+
+	if err != nil { // Error check
+		return []byte{}, err
+	}
+
+	// Close body reader when done
+	defer res.Body.Close()
+	// Read fetched data
+	body, err := io.ReadAll(res.Body)
+
+	// Return result
+	return body, err
+}
+
+func formURL(opts GetListingsOpts) string { // Forms the magicEden API URL according to input parameters
 	url := fmt.Sprintf("https://api-mainnet.magiceden.dev/v2/collections/%s/listings", opts.Symbol)
 
 	// Handle extra parameters
@@ -69,11 +88,15 @@ func GetListings(opts GetListingsOpts, ch chan []byte) error { // Base GetListin
 		paramCnt++
 	}
 
-	// Now that URL is complete, make HTTP request
+	return url
+}
+
+func httpRequest(url string) (*http.Response, error) { // Performs a HTTP request and returns the output
+	// Create HTTP request
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil { // Error check
-		return err
+		return nil, err
 	}
 
 	// Add JSON header to request
@@ -83,16 +106,9 @@ func GetListings(opts GetListingsOpts, ch chan []byte) error { // Base GetListin
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil { // Error check
-		return err
+		return nil, err
 	}
 
-	// Close body reader when done
-	defer res.Body.Close()
-	// Read fetched data
-	body, err := io.ReadAll(res.Body)
-
-	ch <- body // Push to channel
-
-	// Return result
-	return err
+	// Success
+	return res, nil
 }
