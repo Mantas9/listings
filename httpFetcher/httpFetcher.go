@@ -18,7 +18,11 @@ type GetListingsOpts struct {
 func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings function call
 
 	// URL To API
-	url := formURL(opts)
+	url, err := formURL(opts)
+
+	if err != nil { // Error check
+		return []byte{}, err
+	}
 
 	// Execute HTTP request
 	res, err := httpRequest(url)
@@ -36,7 +40,12 @@ func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings fun
 	return body, err
 }
 
-func formURL(opts GetListingsOpts) string { // Forms the magicEden API URL according to input parameters
+func formURL(opts GetListingsOpts) (string, error) { // Forms the magicEden API URL according to input parameters
+	// Handle empty symbol
+	if opts.Symbol == "" {
+		return "", fmt.Errorf("cannot form URL to API: NFT Symbol is invalid: "+`"`+"%v"+`"`, opts.Symbol)
+	}
+
 	url := fmt.Sprintf("https://api-mainnet.magiceden.dev/v2/collections/%s/listings", opts.Symbol)
 
 	// Handle extra parameters
@@ -88,7 +97,7 @@ func formURL(opts GetListingsOpts) string { // Forms the magicEden API URL accor
 		paramCnt++
 	}
 
-	return url
+	return url, nil
 }
 
 func httpRequest(url string) (*http.Response, error) { // Performs a HTTP request and returns the output
