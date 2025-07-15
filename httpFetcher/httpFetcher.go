@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 // GetListings call parameters
@@ -21,18 +22,18 @@ func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings fun
 	url, err := formListingsURL(opts)
 
 	if err != nil { // Error check
-		return []byte{}, err
+		return nil, err
 	}
 
 	// Execute HTTP request
 	res, err := httpRequest(url)
 
 	if err != nil { // Error check
-		return []byte{}, err
+		return nil, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return []byte{}, fmt.Errorf("HTTP request did not return OK (200)")
+		return nil, fmt.Errorf("HTTP request did not return OK (200)")
 	}
 
 	// Close body reader when done
@@ -115,8 +116,13 @@ func httpRequest(url string) (*http.Response, error) { // Performs a HTTP reques
 	// Add JSON header to request
 	req.Header.Add("accept", "application/json")
 
+	// Http client with timeout handling
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	// Execute HTTP request
-	res, err := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 
 	if err != nil { // Error check
 		return nil, err

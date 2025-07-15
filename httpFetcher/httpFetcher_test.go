@@ -1,13 +1,19 @@
 package httpfetcher
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // TestHttpRequest runs a moch http request and tests the function's responses
 func TestHttpRequest(t *testing.T) {
+
+	if testing.Short() {
+		t.Skip("Skipping slow test in short mode")
+	}
 
 	// Test table
 	var tests = []struct {
@@ -42,6 +48,24 @@ func TestHttpRequest(t *testing.T) {
 			},
 			expectErr:  false,
 			wantStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Empty JSON return",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("[]"))
+			},
+			expectErr:  false,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "Timeout",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(15 * time.Second)
+				fmt.Fprint(w, "I am timed out!")
+			},
+			expectErr:  true,
+			wantStatus: http.StatusGatewayTimeout,
 		},
 	}
 
