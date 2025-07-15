@@ -41,3 +41,4 @@ I have learned:
 - To write Unit Tests for Go modules
 - Converting structured JSON data to CSV
 - Working with file outputs
+- Testing HTTP requests with HTTP server mocking
