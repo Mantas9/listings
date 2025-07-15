@@ -1,9 +1,80 @@
 package httpfetcher
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
-// TestFormURL runs formURL with all possible option variations and validates that the API URL was formed correctly
-func TestFormURL(t *testing.T) {
+// TestHttpRequest runs a moch http request and tests the function's responses
+func TestHttpRequest(t *testing.T) {
+
+	// Test table
+	var tests = []struct {
+		name       string
+		handler    http.HandlerFunc
+		expectErr  bool
+		wantStatus int
+	}{
+		{
+			name: "successful request",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				// Validate request method (GET)
+				if r.Method != http.MethodGet {
+					t.Errorf("Expected GET")
+				}
+
+				// Check for JSON header
+				if r.Header.Get("accept") != "application/json" {
+					t.Errorf("Missing Accept header")
+				}
+
+				w.WriteHeader(http.StatusOK) // Return 200 if all is good
+				w.Write([]byte(`{"message": "ok"}`))
+			},
+			expectErr:  false,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "server error",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			expectErr:  false,
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	// Iterate through each scenario
+	for _, tt := range tests {
+		testName := tt.name
+
+		t.Run(testName, func(t *testing.T) {
+
+			// Mock HTTP server
+			server := httptest.NewServer(tt.handler)
+			defer server.Close() // Close server at the end of scope
+
+			res, err := httpRequest(server.URL)
+
+			// Error handling scenarios
+			if tt.expectErr && err == nil {
+				t.Errorf("Expected error, but got nil")
+			}
+			if !tt.expectErr && err != nil {
+				t.Errorf("Expected no error, but got %v", err)
+			}
+
+			// Result status code handling scenarios
+			if res != nil && res.StatusCode != tt.wantStatus {
+				t.Errorf("Expected status %d, got %d", tt.wantStatus, res.StatusCode)
+			}
+		})
+	}
+}
+
+// TestFormListingsURL runs formURL with all possible option variations and validates that the API URL was formed correctly
+func TestFormListingsURL(t *testing.T) {
 
 	// Test table
 	var tests = []struct {
@@ -164,7 +235,7 @@ func TestFormURL(t *testing.T) {
 
 		// Run test
 		t.Run(testname, func(t *testing.T) {
-			url, err := formURL(tt.options) // Run function
+			url, err := formListingsURL(tt.options) // Run function
 
 			// Check for error mismatches
 			if tt.expectErr && err == nil {

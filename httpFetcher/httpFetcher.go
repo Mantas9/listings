@@ -18,7 +18,7 @@ type GetListingsOpts struct {
 func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings function call
 
 	// URL To API
-	url, err := formURL(opts)
+	url, err := formListingsURL(opts)
 
 	if err != nil { // Error check
 		return []byte{}, err
@@ -31,6 +31,10 @@ func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings fun
 		return []byte{}, err
 	}
 
+	if res.StatusCode != http.StatusOK {
+		return []byte{}, fmt.Errorf("HTTP request did not return OK (200)")
+	}
+
 	// Close body reader when done
 	defer res.Body.Close()
 	// Read fetched data
@@ -40,7 +44,7 @@ func GetListings(opts GetListingsOpts) ([]byte, error) { // Base GetListings fun
 	return body, err
 }
 
-func formURL(opts GetListingsOpts) (string, error) { // Forms the magicEden API URL according to input parameters
+func formListingsURL(opts GetListingsOpts) (string, error) { // Forms the magicEden API URL according to input parameters
 	// Handle empty symbol
 	if opts.Symbol == "" {
 		return "", fmt.Errorf("cannot form URL to API: NFT Symbol is invalid: "+`"`+"%v"+`"`, opts.Symbol)
